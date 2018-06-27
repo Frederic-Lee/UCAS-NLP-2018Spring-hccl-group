@@ -22,7 +22,7 @@ Sentences consist of one or more word lines, and word lines contain the followin
   9. DEPS: Enhanced dependency graph in the form of a list of head-deprel pairs.
   10. MISC: Any other annotation.
   
-Detailed information is available in the officail website:
+Detailed information is available in the official website:
 http://universaldependencies.org/
 
 ## Pre-trained Embeddings:

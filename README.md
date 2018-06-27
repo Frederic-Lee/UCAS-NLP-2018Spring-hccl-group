@@ -1,8 +1,8 @@
 # UCAS-NLP-2018Spring-hccl-group
 Course Project of Natural Language Processing, focused on Tagging and Dependency Parsing.
 
-Dataset:
-Universal Dependencies v2.1
+## Dataset:
+### Universal Dependencies v2.1
 https://lindat.mff.cuni.cz/repository/xmlui/bitstream/handle/11234/1-2515/ud-treebanks-v2.1.tgz?sequence=4&isAllowed=y
 UD uses a revised version of the CoNLL-X format called CoNLL-U. Annotations are encoded in plain text files (UTF-8, using only the LF character as line break, including an LF character at the end of file) with three types of lines:
   1.Word lines containing the annotation of a word/token in 10 fields separated by single tab characters; see below.
@@ -19,14 +19,19 @@ Sentences consist of one or more word lines, and word lines contain the followin
   8.DEPREL: Universal dependency relation to the HEAD (root iff HEAD = 0) or a defined language-specific subtype of one.
   9.DEPS: Enhanced dependency graph in the form of a list of head-deprel pairs.
   10.MISC: Any other annotation.
+  
 Detailed information is available in the officail website:
 http://universaldependencies.org/
 
-Pre-trained Embeddings:
-FastText
-https://github.com/facebookresearch/fastText/blob/master/docs/crawl-vectors.md
+## Pre-trained Embeddings:
+### FastText
 Pre-trained word vectors for 157 languages, trained on Common Crawl and Wikipedia using fastText. These models were trained using CBOW with position-weights, in dimension 300, with character n-grams of length 5, a window of size 5 and 10 negatives.
+https://github.com/facebookresearch/fastText/blob/master/docs/crawl-vectors.md
+
+### Glove
 For English, we suggest Glove embeddings trained on Wikipedia 2014 + Gigaword 5 (6B tokens, 400K vocab, uncased, 300d vectors, 822 MB download)
 http://nlp.stanford.edu/data/wordvecs/glove.6B.zip
+
+### ELMo
 ELMo in English is also supported in this project. We have implemented "computing representations on the fly from raw text using character input". Please download the options file and weights file in the following website:
 https://github.com/allenai/bilm-tf

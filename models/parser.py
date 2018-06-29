@@ -16,13 +16,14 @@ class ParserBuilder(object):
     Building model on a device.
 
     """
-    def __init__(self, config, data_collector):
+    def __init__(self, name, config, data_collector):
         """
         Args:
             config: configure instance for a treebank
             data_collector: vocabs, n_vocabs, embedds, train or dev or test datasets
 
         """
+        self.name   = name
         self.config = config
         self.data   = data_collector
 
@@ -95,16 +96,22 @@ class ParserBuilder(object):
 
         def get_elmo_embedd(self):
             """ELMo embedding"""
-            bilm = BidirectionalLanguageModel('/home/liyujiang/Project/dataset/elmo/options.json', 
-                    '/home/liyujiang/Project/dataset/elmo/weights.hdf5')
-            char_ids = tf.placeholder(tf.int32, shape=[None, None, None])
-            elmo_embedd_op = bilm(char_ids)
+            bilm = BidirectionalLanguageModel(self.config.elmo_options, self.config.elmo_weights)
+            elmo_embedd_op = bilm(self.char_ids)
             elmo_embedd = weight_layers('embedd', elmo_embedd_op, l2_coef=0.0)
 
             return elmo_embedd['weighted_op']
 
         # 0. gloabl embeddings list
         global_embedd_list = []
+        # 0* elmo embeddings
+        if self.config.elmoFLAG is True:
+            self.elmo_embedd = get_elmo_embedd(self)
+            if self.config.reduce_elmo is True:
+                self.elmo_embedd = linear_projection(
+                        self.elmo_embedd,
+                        self.config.reduce_elmo_dim,
+                        scope="elmo_embedd_reduce")
 
         # 1. character embeddings, can be reused
         reuse_subtoken = None
@@ -126,6 +133,7 @@ class ParserBuilder(object):
         if self.config.cross_lingual is True:
             token_scope = self.config.language+"_word"
         with tf.variable_scope(token_scope, reuse=reuse_token):
+            # random initialized embedd
             if self.config.wngramFLAG is True:
                 _word_ngram = tf.get_variable(
                         name="_word_ngram",
@@ -134,6 +142,7 @@ class ParserBuilder(object):
                 word_ngram = tf.nn.embedding_lookup(_word_ngram,
                         self.word_ids, name="word_ngram")
                 global_embedd_list.append(word_ngram)
+            # pre-trained unsupervised embedd
             if self.config.wembeddFLAG is True:
                 _word_embedd = tf.get_variable(
                         name="_word_embedd",
@@ -148,10 +157,9 @@ class ParserBuilder(object):
                             self.config.reduce_pretrained_dim,
                             scope="word_embedd_reduce")
                 global_embedd_list.append(word_embedd)
-            if self.config.elmoFLAG is True:
-                self.elmo_embedd = get_elmo_embedd(self)
-                if self.config.emlo_position != 'output':
-                    global_embedd_list.append(self.elmo_embedd)
+            # elmo: pre-trained supervised embedd
+            if self.config.elmoFLAG is True and self.config.elmo_position != 'output':
+                global_embedd_list.append(self.elmo_embedd)
 
         # 3. tagging embeddings
         with tf.variable_scope(self.config.treebank+"_postag", reuse=None):
@@ -233,12 +241,12 @@ class ParserBuilder(object):
         with tf.variable_scope(self.config.treebank):
             logits = self.encoder_logits
             ## dim-reduction layer
-            if self.config.reduce_dim is True:
+            if self.config.reduce_encoder is True:
                 if self.config.output_keep_prob < 1.0:
                     reduce_dim_keep_prob = 1.0
                 else:
                     reduce_dim_keep_prob = self.config.mlp_keep_prob
-                logits = linear_projection(self.encoder_logits, self.config.dim_reduce, scope="reduce_dim_layer",
+                logits = linear_projection(self.encoder_logits, self.config.reduce_encoder_dim, scope="reduce_encoder_layer",
                         n_split=1, bias=True, activate_func=None, keep_prob=reduce_dim_keep_prob)
 
             ## arc & rel projection layer
@@ -350,7 +358,6 @@ class Parser(object):
         self.data   = data_collector
         self.logger = get_logger(self.config.log)
         self.saver  = None
-        self.sub_model = ParserBuilder(config, data_collector)
 
 
     def _average_gradients(self, tower_grads):
@@ -422,17 +429,18 @@ class Parser(object):
                 with tf.device("/gpu:%d"%device_idx):
                     with tf.name_scope("tower_%d"%device_idx) as scope:
                         # build-up model
-                        self.sub_model.add_placeholders_op()
-                        self.sub_model.add_embeddings_op()
-                        self.sub_model.add_encode_op()
-                        self.sub_model.add_score_op()
-                        self.sub_model.add_loss_op()
+                        sub_model = ParserBuilder("base-parser-%d"%device_idx, self.config, self.data)
+                        sub_model.add_placeholders_op()
+                        sub_model.add_embeddings_op()
+                        sub_model.add_encode_op()
+                        sub_model.add_score_op()
+                        sub_model.add_loss_op()
                         # Reuse variables for the next tower
                         tf.get_variable_scope().reuse_variables()
                         # Add model to collection
-                        tf.add_to_collection("sub_models", self.sub_model)
+                        tf.add_to_collection("sub_models", sub_model)
                         # Compute grads for each device
-                        grads, vs    = zip(*optimizer.compute_gradients(self.sub_model.loss))
+                        grads, vs    = zip(*optimizer.compute_gradients(sub_model.loss))
                         if self.config.clip > 0.0:
                             grads, _ = tf.clip_by_global_norm(grads, self.config.clip)
                         grad_and_var = zip(grads, vs)

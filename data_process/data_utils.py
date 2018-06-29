@@ -7,7 +7,7 @@ from data_process.dataset import EMAIL, AT_SYMBOL, URL
 
 
 ### Processing tokens ###
-def token_normalize(token, lowercase=False, uni_digit=False, strong_norm=False, max_len=30):
+def token_normalize(token, lowercase=False, uni_digit=False, strong_norm=False, max_len=50):
     """ Normalize the token 
     Args:
         strong_norm: normalize token that is email, url etc.

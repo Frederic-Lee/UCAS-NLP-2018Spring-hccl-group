@@ -7,15 +7,17 @@ from utils.logger import get_logger
 class BaseModel(object):
     """ Manager of Data-Collector and Sub-Graph-Model """
 
-    def __init__(self, models=None):
+    def __init__(self, models=None, config=None):
         """
         Args:
             sess: session
             models: each model contain config, data_controller and sub-graph
+            config: global config
 
         """
         self.sess = None
         self.models = models
+        self.config = config
 
 
     def init_session(self, enable_ckpt=False):
@@ -110,6 +112,7 @@ class BaseModel(object):
                     continue
 
                 # training the model over full-dataset by batch
+                task = str(model.config.task)
                 model.train(self.sess, epoch)
                 
                 # validation on the whole dataset
@@ -120,10 +123,9 @@ class BaseModel(object):
                 model.logger.info(msg)
 
                 # early stopping and saving best parameters
-                task='pos'
-                if task is 'parse':
+                if task == 'parse':
                     score = metrics['LAS']
-                elif task is 'pos':
+                elif task == 'pos':
                     score = metrics['F1']
                 else:
                     score = metrics['F1']

@@ -26,7 +26,7 @@ def argparse_console(argparser):
     argparser.add_argument('--train_dir',   default='../dataset/ud-treebanks-v2.1/ud-treebanks-v2.1', help='Traning dataset direction, language general.')
     argparser.add_argument('--test_dir',    default='../dataset/ud-treebanks-v2.1/ud-treebanks-v2.1', help='Testing dataset direction, language general.')
     argparser.add_argument('--embedd_dir',  default='../dataset/glove', help='Pre-trained embeddings direction.')
-    argparser.add_argument('--elmo_dir',    default='/home/liyujiang/Project/dataset/elmo', help='ELMo weights and options direction.')
+    argparser.add_argument('--elmo_dir',    default='../dataset/elmo', help='ELMo weights and options direction.')
     argparser.add_argument('--data_dir',    default='./data', help='Preprocessed data direction, including vocabulary-sub-dir and look-up-embedding-sub-dir. Vocabulary for word, char, POS, labels etc. direction.')
     argparser.add_argument('--result_dir',  default='./results', help='Results for params, model, prediction etc. direction.')
     argparser.add_argument('--device_ids',  default='0', help='Devices like 0-1-2')
@@ -34,6 +34,8 @@ def argparse_console(argparser):
     # Language and Task
     argparser.add_argument('--cross_domain', type=str2bool, default=False, help='Cross domain FLAG.')
     argparser.add_argument('--cross_lingual', type=str2bool,default=False, help='Cross lingual FLAG.')
+    argparser.add_argument('--adversarial', type=str2bool,  default=False, help='Adversarial trained FLAG for corss-lingual or cross-domain.')
+    argparser.add_argument('--multi_task', type=str2bool,   default=False, help='Multi-Task for Tagging.')
     argparser.add_argument('--data_model', choices=['seperate-data_seperate-model', 'seperate-data_combine-model', 'combine-data_combine-model'], default='seperate-data_seperate-model', help='Seperate or Combined Dataset or Model.')
     argparser.add_argument('-l', '--language', dest='lang_list', action='append',   help='Select abbreviated languages, e.g. -l en -l de -l zh , where \'-l\' is short for \'--language\' and support several options. ATTENTION: ONLY CROSS-LANGUAGE SUPPORT MULTI-LANGUAGE !!!')
     argparser.add_argument('-tb', '--treebank', dest='tree_list', action='append',  help='Select language-corresponding treebank where one language can have multi-domian treebanksi, and config-instance characterized by treebank.')
@@ -51,6 +53,8 @@ def argparse_console(argparser):
     argparser.add_argument('--reuse_token', type=str2bool, default=False, help='Share word-embedd for mono-lang cross-domain')
     argparser.add_argument('--reduce_pretrained', type=str2bool, default=False, help='Reduce pretrained embeddings.')
     argparser.add_argument('--reduce_pretrained_dim', type=int, default=100, help='Reduce pretrained embeddings to dim.')
+    argparser.add_argument('--reduce_elmo', type=str2bool, default=False, help='Reduce pretrained embeddings.')
+    argparser.add_argument('--reduce_elmo_dim', type=int, default=100, help='Reduce pretrained embeddings to dim.')
     argparser.add_argument('--embedd_word_ngram', dest='dim_wngram', type=int, default=100, help='N-gram word embedding dimensions')
     argparser.add_argument('--embedd_word_pretrained', dest='dim_wembedd', type=int, default=100, help='Pretrained word dimensions')
     argparser.add_argument('--embedd_word_elmo', dest='dim_welmo', type=int, default=100, help='N-gram word embedding dimensions')
@@ -86,6 +90,8 @@ def argparse_console(argparser):
     argparser.add_argument('--attention_size', type=int,     default=100,  help='General Attention size for each attention layer')
     argparser.add_argument('--attention_type', choices=['additive', 'dot_product'], default='additive', help='Attention Type, if choose dot_product, please check norm-dot.')
     # Transformer (Self-Attention) Encoder
+    argparser.add_argument('--enable_partition', type=str2bool, default=False, help='Devide input-embedd into content and position.')
+    argparser.add_argument('--multi_head_combine', choices=['concat', 'weighted-add'], default='concat', help='Multi-head combined.')
     argparser.add_argument('--transformer_nlayer', type=int, default=2)
     argparser.add_argument('--nhead', type=int, default=8)
     argparser.add_argument('--model_size', type=int, default=512)
@@ -96,8 +102,8 @@ def argparse_console(argparser):
 
     # Scoring and Decoding
     argparser.add_argument('--mlp_keep_prob', type=float, default=0.67, help='Dropout for All MLPs')
-    argparser.add_argument('--reduce_dim', type=str2bool, default=False, help='Dim-reduction after encoder')
-    argparser.add_argument('--dim_reduce', type=int, default=200, help='Dim-reduction after encoder')
+    argparser.add_argument('--reduce_encoder', type=str2bool, default=False, help='Dim-reduction FLAG after encoder')
+    argparser.add_argument('--reduce_encoder_dim', type=int, default=200, help='Reduced-dim after encoder')
     argparser.add_argument('--arc_size', type=int, default=400, help='Size of edge classifier')
     argparser.add_argument('--rel_size', type=int, default=100, help='Size of label classifier')
     argparser.add_argument('--share_arc_rel', type=str2bool, default=False, help='Share head and modifier in arc and label, where arc and rel size must be the same.')

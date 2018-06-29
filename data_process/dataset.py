@@ -128,11 +128,12 @@ class ConllDataset(object):
                 tok = line.strip().split('\t')
                 if not tok or line.strip() == '':
                     if len(tokens)>1:
-                        yield tokens if self.enable_seqlabel is False else (tokens, seq_label)
+                        yield tokens if self.enable_seqlabel is False else (tokens, seqlabel)
                     tokens = [root]
                 else:
                     if line[0] == '#' or '.' in tok[0]:
                         lucky = 1
+                        seqlabel = line.strip().split(' ')[-1]
                     elif line[0] == '#' and '-label:' in tok[1]:
                         seqlabel = tok[2]
                     elif '-' in tok[0]:
